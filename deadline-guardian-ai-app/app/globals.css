@@ -1,0 +1,320 @@
+@import "tailwindcss";
+
+:root {
+  --background: #060912;
+  --foreground: #ececef;
+  --muted: #71717a;
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-hover: rgba(255, 255, 255, 0.05);
+  --glass: rgba(18, 18, 22, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-highlight: rgba(255, 255, 255, 0.04);
+  --accent: #5eead4;
+  --accent-dim: rgba(94, 234, 212, 0.12);
+  --violet: #a78bfa;
+  --violet-dim: rgba(167, 139, 250, 0.12);
+  --amber: #fbbf24;
+  --amber-dim: rgba(251, 191, 36, 0.12);
+  --rose: #fb7185;
+  --rose-dim: rgba(251, 113, 133, 0.12);
+  --emerald: #34d399;
+  --emerald-dim: rgba(52, 211, 153, 0.12);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-violet: var(--violet);
+  --color-violet-dim: var(--violet-dim);
+  --color-amber: var(--amber);
+  --color-amber-dim: var(--amber-dim);
+  --color-rose: var(--rose);
+  --color-rose-dim: var(--rose-dim);
+  --color-emerald: var(--emerald);
+  --color-emerald-dim: var(--emerald-dim);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.os-bg {
+  background: var(--background);
+}
+
+/* ─── Command center ambient background ─── */
+
+.command-bg-base {
+  background:
+    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(15, 25, 50, 0.9) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 50%, rgba(10, 18, 40, 0.6) 0%, transparent 50%),
+    linear-gradient(180deg, #060912 0%, #080d1a 35%, #060912 100%);
+}
+
+.command-bg-horizon {
+  background: radial-gradient(
+    ellipse 90% 60% at 50% 100%,
+    rgba(212, 175, 55, 0.07) 0%,
+    rgba(94, 234, 212, 0.04) 25%,
+    transparent 65%
+  );
+  animation: horizon-breathe 14s ease-in-out infinite;
+}
+
+.command-bg-pool-teal {
+  background: radial-gradient(circle, rgba(94, 234, 212, 0.06) 0%, transparent 70%);
+  filter: blur(60px);
+  animation: pool-drift 20s ease-in-out infinite;
+}
+
+.command-bg-pool-gold {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+  filter: blur(50px);
+  animation: pool-drift 24s ease-in-out infinite reverse;
+}
+
+.command-bg-orbit-group {
+  animation: orbit-drift 60s linear infinite;
+}
+
+.command-bg-orbit-group-reverse {
+  animation: orbit-drift 80s linear infinite reverse;
+}
+
+.command-bg-curve {
+  animation: curve-shimmer 12s ease-in-out infinite;
+}
+
+.command-bg-curve-slow {
+  animation: curve-shimmer 18s ease-in-out infinite reverse;
+}
+
+.command-bg-particles {
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, 0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 45%, rgba(94, 234, 212, 0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 65%, rgba(212, 175, 55, 0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 55%, rgba(94, 234, 212, 0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 75%, rgba(255, 255, 255, 0.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 85%, rgba(212, 175, 55, 0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 10%, rgba(255, 255, 255, 0.18) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 80%, rgba(94, 234, 212, 0.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 40%, rgba(255, 255, 255, 0.14) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 70%, rgba(212, 175, 55, 0.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 25%, rgba(255, 255, 255, 0.16) 0%, transparent 100%),
+    radial-gradient(1px 1px at 20% 60%, rgba(94, 234, 212, 0.1) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 95%, rgba(255, 255, 255, 0.1) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 48%, rgba(255, 255, 255, 0.08) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 35%, rgba(212, 175, 55, 0.1) 0%, transparent 100%);
+  animation: particles-drift 30s linear infinite;
+  opacity: 0.7;
+}
+
+.command-bg-vignette {
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, transparent 30%, rgba(6, 9, 18, 0.55) 100%),
+    linear-gradient(180deg, rgba(6, 9, 18, 0.3) 0%, transparent 15%, transparent 85%, rgba(6, 9, 18, 0.4) 100%);
+}
+
+.command-bg-top-fade {
+  background: linear-gradient(180deg, rgba(6, 9, 18, 0.6) 0%, transparent 100%);
+}
+
+@keyframes horizon-breathe {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes pool-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(2%, 1%) scale(1.02);
+  }
+  66% {
+    transform: translate(-1%, 2%) scale(0.98);
+  }
+}
+
+@keyframes orbit-drift {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes curve-shimmer {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes particles-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(-1.5%, -1%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-bg-horizon,
+  .command-bg-pool-teal,
+  .command-bg-pool-gold,
+  .command-bg-orbit-group,
+  .command-bg-orbit-group-reverse,
+  .command-bg-curve,
+  .command-bg-curve-slow,
+  .command-bg-particles {
+    animation: none;
+  }
+}
+
+.glass-panel {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 40%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 40px rgba(0, 0, 0, 0.45);
+}
+
+.glass-panel-subtle {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ececef 0%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-accent {
+  background: linear-gradient(135deg, #5eead4 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.input-os {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.input-os:focus {
+  outline: none;
+  border-color: rgba(94, 234, 212, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.08);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(94, 234, 212, 0.9) 0%, rgba(94, 234, 212, 0.75) 100%);
+  color: #08080a;
+  font-weight: 600;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
