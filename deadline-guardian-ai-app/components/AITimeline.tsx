@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { GeneratedPlan } from "./generated-plan";
 import { GlassPanel } from "./ui/GlassPanel";
 
 const phases = [
@@ -58,7 +59,28 @@ const statusStyles = {
   buffer: { bar: "bg-violet/60", dot: "bg-violet", glow: "rgba(167,139,250,0.3)" },
 };
 
-export function AITimeline() {
+type AITimelineProps = {
+  plan: GeneratedPlan | null;
+};
+
+export function AITimeline({ plan }: AITimelineProps) {
+  const totalHours =
+    plan?.timeline.reduce((sum, phase) => sum + phase.hours, 0) ?? 0;
+  const timelinePhases = plan
+    ? plan.timeline.map((phase, index) => ({
+        id: `${phase.day}-${index}`,
+        label: phase.task,
+        days: phase.day,
+        hours: phase.hours,
+        status: index === 0 ? ("active" as const) : ("upcoming" as const),
+        ai: phase.task,
+        width: Math.max(8, (phase.hours / Math.max(totalHours, 1)) * 100),
+      }))
+    : phases;
+  const recommendation =
+    plan?.recommendations[0] ??
+    "Body sections are the critical path. Start 30 min earlier tomorrow to preserve buffer. Current trajectory:";
+
   return (
     <GlassPanel padding="lg" className="overflow-hidden">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -74,7 +96,7 @@ export function AITimeline() {
               </svg>
               AI Timeline
             </motion.span>
-            <span className="text-[10px] text-muted">Auto-generated · 5 phases</span>
+            <span className="text-[10px] text-muted">Auto-generated · {timelinePhases.length} phases</span>
           </div>
           <h3 className="mt-2 text-[15px] font-semibold">Mission execution path</h3>
         </div>
@@ -93,7 +115,7 @@ export function AITimeline() {
 
       {/* Gantt-style bar */}
       <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-white/[0.04]">
-        {phases.map((phase, i) => {
+        {timelinePhases.map((phase, i) => {
           const style = statusStyles[phase.status];
           return (
             <motion.div
@@ -114,7 +136,7 @@ export function AITimeline() {
 
       {/* Phase cards */}
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {phases.map((phase, i) => {
+        {timelinePhases.map((phase, i) => {
           const style = statusStyles[phase.status];
           return (
             <motion.div
@@ -169,8 +191,7 @@ export function AITimeline() {
         <div>
           <p className="text-xs font-medium text-violet/90">AI Recommendation</p>
           <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
-            Body sections are the critical path. Start 30 min earlier tomorrow to
-            preserve buffer. Current trajectory:{" "}
+            {recommendation}{" "}
             <span className="text-emerald">on track</span>.
           </p>
         </div>

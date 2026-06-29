@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { GeneratedPlan } from "./generated-plan";
 import { GlassPanel } from "./ui/GlassPanel";
 
 const metrics = [
@@ -53,6 +54,12 @@ const colorMap = {
   amber: { text: "text-amber", fill: "#fbbf24", bg: "bg-amber-dim" },
 };
 
+function buildSparkline(value: number) {
+  const start = Math.max(0, value - 28);
+
+  return [start, start + 6, start + 3, start + 12, start + 16, start + 20, value];
+}
+
 function Sparkline({ data, color }: { data: number[]; color: string }) {
   const w = 80;
   const h = 28;
@@ -88,10 +95,63 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-export function AnalyticsCards() {
+type AnalyticsCardsProps = {
+  plan: GeneratedPlan | null;
+};
+
+export function AnalyticsCards({ plan }: AnalyticsCardsProps) {
+  const plannedHours =
+    plan?.timeline.reduce((sum, phase) => sum + phase.hours, 0) ?? 0;
+  const derivedMetrics = plan
+    ? [
+        {
+          id: "velocity",
+          label: "Plan velocity",
+          value: Math.round(plan.confidence),
+          unit: "%",
+          trend: `${plan.timeline.length} phases`,
+          trendUp: true,
+          sparkline: buildSparkline(Math.round(plan.confidence)),
+          color: "accent",
+        },
+        {
+          id: "focus",
+          label: "Focus score",
+          value: Math.round(Math.min(100, (plannedHours / plan.estimatedHours) * 100)),
+          unit: "%",
+          trend: `${plannedHours}h planned`,
+          trendUp: true,
+          sparkline: buildSparkline(
+            Math.round(Math.min(100, (plannedHours / plan.estimatedHours) * 100))
+          ),
+          color: "violet",
+        },
+        {
+          id: "completion",
+          label: "Phase completion",
+          value: plan.timeline.length,
+          unit: "",
+          trend: `${plan.timeline.length} tasks`,
+          trendUp: true,
+          sparkline: buildSparkline(Math.min(100, plan.timeline.length * 12)),
+          color: "emerald",
+        },
+        {
+          id: "streak",
+          label: "On-time streak",
+          value: Math.round(plan.estimatedHours),
+          unit: "h",
+          trend: plan.riskLevel,
+          trendUp: true,
+          sparkline: buildSparkline(Math.min(100, Math.round(plan.estimatedHours))),
+          color: "amber",
+        },
+      ]
+    : metrics;
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {metrics.map((metric, i) => {
+      {derivedMetrics.map((metric, i) => {
         const colors = colorMap[metric.color as keyof typeof colorMap];
         return (
           <motion.div

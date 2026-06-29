@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { GuardianRecommendations } from "./GuardianRecommendations";
 import { AITimeline } from "./AITimeline";
 import { AnalyticsCards } from "./AnalyticsCards";
@@ -10,8 +12,17 @@ import { MissionComposer } from "./MissionComposer";
 import { RiskRadar } from "./RiskRadar";
 import { Sidebar } from "./Sidebar";
 import { TimeAllocation } from "./TimeAllocation";
+import type { GeneratedPlan, MissionInput } from "./generated-plan";
 
 export function CommandCenter() {
+  const [plan, setPlan] = useState<GeneratedPlan | null>(null);
+  const [mission, setMission] = useState<MissionInput | null>(null);
+
+  function handlePlanGenerated(generatedPlan: GeneratedPlan, missionInput: MissionInput) {
+    setPlan(generatedPlan);
+    setMission(missionInput);
+  }
+
   return (
     <div className="relative flex min-h-screen os-bg">
       <CommandBackground />
@@ -24,26 +35,30 @@ export function CommandCenter() {
 
           <main className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="mx-auto max-w-[1400px] space-y-4">
-              {/* Top row: countdown + risk */}
+
+              {/* Mission composer */}
+              <MissionComposer
+                onPlanGenerated={handlePlanGenerated}
+              />
+
+              {/* Top row */}
               <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-                <CountdownWidget />
-                <RiskRadar />
+                <CountdownWidget plan={plan} deadline={mission?.deadline} missionName={mission?.missionName} />
+                <RiskRadar plan={plan} />
               </div>
 
-              {/* Analytics strip */}
-              <AnalyticsCards />
+              {/* Analytics */}
+              <AnalyticsCards plan={plan} />
 
-              {/* AI Guardian recommendations */}
-              <GuardianRecommendations />
+              {/* Guardian */}
+              <GuardianRecommendations plan={plan} />
 
-              {/* AI Timeline — full width */}
-              <AITimeline />
+              {/* Timeline */}
+              <AITimeline plan={plan} />
 
-              {/* Bottom row: allocation + composer */}
-              <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
-                <TimeAllocation />
-                <MissionComposer />
-              </div>
+              {/* Bottom */}
+              <TimeAllocation plan={plan} />
+
             </div>
           </main>
         </div>

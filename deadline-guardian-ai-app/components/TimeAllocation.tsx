@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { GeneratedPlan } from "./generated-plan";
 import { GlassPanel } from "./ui/GlassPanel";
 
 const allocations = [
@@ -12,14 +13,23 @@ const allocations = [
 
 const TOTAL = allocations.reduce((s, a) => s + a.hours, 0);
 
-function DonutChart() {
+type Allocation = {
+  label: string;
+  hours: number;
+  pct: number;
+  color: string;
+};
+
+const allocationColors = ["#5eead4", "#a78bfa", "#fbbf24", "#34d399"];
+
+function DonutChart({ segments }: { segments: Allocation[] }) {
   const size = 140;
   const stroke = 18;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const segments = allocations.map((seg, i) => {
-    const offset = allocations
+  const chartSegments = segments.map((seg, i) => {
+    const offset = segments
       .slice(0, i)
       .reduce((sum, s) => sum + (s.pct / 100) * circumference, 0);
     return { seg, offset };
@@ -35,7 +45,7 @@ function DonutChart() {
         stroke="rgba(255,255,255,0.04)"
         strokeWidth={stroke}
       />
-      {segments.map(({ seg, offset }) => {
+      {chartSegments.map(({ seg, offset }) => {
         const dash = (seg.pct / 100) * circumference;
         return (
           <motion.circle
@@ -61,7 +71,24 @@ function DonutChart() {
   );
 }
 
-export function TimeAllocation() {
+type TimeAllocationProps = {
+  plan: GeneratedPlan | null;
+};
+
+export function TimeAllocation({ plan }: TimeAllocationProps) {
+  const total = plan
+    ? plan.timeline.reduce((sum, phase) => sum + phase.hours, 0)
+    : TOTAL;
+  const derivedAllocations = plan
+    ? plan.timeline.map((phase, index) => ({
+        label: phase.task,
+        hours: phase.hours,
+        pct: Math.round((phase.hours / Math.max(total, 1)) * 100),
+        color: allocationColors[index % allocationColors.length],
+      }))
+    : allocations;
+  const peakHours = Math.max(...derivedAllocations.map((item) => item.hours));
+
   return (
     <GlassPanel className="flex h-full flex-col" padding="lg">
       <div>
@@ -73,17 +100,17 @@ export function TimeAllocation() {
 
       <div className="mt-4 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         <div className="relative shrink-0">
-          <DonutChart />
+          <DonutChart segments={derivedAllocations} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="font-mono text-2xl font-semibold tabular-nums">
-              {TOTAL}
+              {total}
             </span>
             <span className="text-[10px] text-muted">hours</span>
           </div>
         </div>
 
         <div className="w-full flex-1 space-y-3">
-          {allocations.map((seg, i) => (
+          {derivedAllocations.map((seg, i) => (
             <motion.div
               key={seg.label}
               initial={{ opacity: 0, x: -8 }}
@@ -119,9 +146,9 @@ export function TimeAllocation() {
       <div className="mt-auto pt-5">
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "Daily avg", value: "1.8h" },
-            { label: "Peak day", value: "4.0h" },
-            { label: "Remaining", value: "4.5h" },
+            { label: "Daily avg", value: plan ? `${(total / Math.max(plan.timeline.length, 1)).toFixed(1)}h` : "1.8h" },
+            { label: "Peak day", value: plan ? `${peakHours.toFixed(1)}h` : "4.0h" },
+            { label: "Remaining", value: plan ? `${Math.max(plan.estimatedHours - total, 0).toFixed(1)}h` : "4.5h" },
           ].map((stat) => (
             <div
               key={stat.label}

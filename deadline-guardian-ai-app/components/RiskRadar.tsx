@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { GeneratedPlan } from "./generated-plan";
 import { GlassPanel } from "./ui/GlassPanel";
 
 const axes = [
@@ -34,15 +35,40 @@ function polygonPoints(values: number[]) {
     .join(" ");
 }
 
-export function RiskRadar() {
-  const step = 360 / axes.length;
-  const dataPoints = axes.map((a) => a.value);
-  const overallRisk = Math.round(
-    (dataPoints.reduce((s, v) => s + v, 0) / dataPoints.length) * 100
-  );
+type RiskRadarProps = {
+  plan: GeneratedPlan | null;
+};
 
-  const riskLevel =
-    overallRisk >= 70 ? "High" : overallRisk >= 50 ? "Moderate" : "Low";
+function riskScoreFromLevel(riskLevel: string) {
+  const normalized = riskLevel.toLowerCase();
+
+  if (normalized.includes("high")) {
+    return 78;
+  }
+
+  if (normalized.includes("low")) {
+    return 32;
+  }
+
+  return 58;
+}
+
+export function RiskRadar({ plan }: RiskRadarProps) {
+  const riskLevel = plan?.riskLevel ?? "Moderate";
+  const overallRisk = plan
+    ? riskScoreFromLevel(plan.riskLevel)
+    : Math.round((axes.reduce((s, v) => s + v.value, 0) / axes.length) * 100);
+  const riskAxes = plan
+    ? axes.map((axis, index) => ({
+        ...axis,
+        value: Math.min(
+          0.95,
+          Math.max(0.18, overallRisk / 100 + (index - 2) * 0.06)
+        ),
+      }))
+    : axes;
+  const step = 360 / riskAxes.length;
+  const dataPoints = riskAxes.map((a) => a.value);
   const riskColor =
     overallRisk >= 70 ? "text-rose" : overallRisk >= 50 ? "text-amber" : "text-emerald";
 
@@ -68,7 +94,7 @@ export function RiskRadar() {
           {/* Grid rings */}
           {Array.from({ length: LEVELS }, (_, i) => {
             const r = ((i + 1) / LEVELS) * MAX_R;
-            const pts = axes
+            const pts = riskAxes
               .map((_, j) => {
                 const p = polar(j * step, r);
                 return `${p.x},${p.y}`;
@@ -86,7 +112,7 @@ export function RiskRadar() {
           })}
 
           {/* Axis lines */}
-          {axes.map((_, i) => {
+          {riskAxes.map((_, i) => {
             const p = polar(i * step, MAX_R);
             return (
               <line
@@ -114,7 +140,7 @@ export function RiskRadar() {
           />
 
           {/* Data points */}
-          {axes.map((axis, i) => {
+          {riskAxes.map((axis, i) => {
             const p = polar(i * step, MAX_R * axis.value);
             return (
               <motion.circle
@@ -145,7 +171,7 @@ export function RiskRadar() {
           />
 
           {/* Labels */}
-          {axes.map((axis, i) => {
+          {riskAxes.map((axis, i) => {
             const p = polar(i * step, MAX_R + 22);
             return (
               <text
@@ -166,7 +192,7 @@ export function RiskRadar() {
       </div>
 
       <div className="mt-2 space-y-1.5">
-        {axes
+        {riskAxes
           .filter((a) => a.value >= 0.6)
           .map((axis) => (
             <div

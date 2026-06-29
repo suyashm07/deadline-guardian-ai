@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { type ReactNode } from "react";
+import type { GeneratedPlan } from "./generated-plan";
 import { GlassPanel } from "./ui/GlassPanel";
 
 const recommendation = {
@@ -20,6 +21,26 @@ const riskStyles = {
   High: { text: "text-rose", bg: "bg-rose-dim", dot: "bg-rose" },
 };
 
+type KnownRiskLevel = keyof typeof riskStyles;
+
+function normalizeRiskLevel(riskLevel: string): KnownRiskLevel {
+  const normalized = riskLevel.toLowerCase();
+
+  if (normalized.includes("high")) {
+    return "High";
+  }
+
+  if (normalized.includes("low")) {
+    return "Low";
+  }
+
+  return "Moderate";
+}
+
+function riskScoreFromLevel(riskLevel: KnownRiskLevel) {
+  return riskLevel === "High" ? 78 : riskLevel === "Low" ? 32 : 58;
+}
+
 function MetricCell({
   label,
   children,
@@ -37,11 +58,30 @@ function MetricCell({
   );
 }
 
-export function GuardianRecommendations() {
-  const risk = riskStyles[recommendation.riskLevel];
+type GuardianRecommendationsProps = {
+  plan: GeneratedPlan | null;
+};
+
+export function GuardianRecommendations({ plan }: GuardianRecommendationsProps) {
+  const riskLevel = plan ? normalizeRiskLevel(plan.riskLevel) : recommendation.riskLevel;
+  const successProbability = plan
+    ? Math.round(plan.confidence)
+    : recommendation.successProbability;
+  const activeRecommendation = plan
+    ? {
+        task: plan.recommendations[0] ?? plan.summary,
+        taskMeta: `${Math.round(plan.estimatedHours)}h estimated · AI generated`,
+        riskLevel,
+        riskScore: riskScoreFromLevel(riskLevel),
+        expectedCompletion: "Based on generated timeline",
+        bufferRemaining: `${plan.timeline.length} phases`,
+        successProbability,
+      }
+    : recommendation;
+  const risk = riskStyles[activeRecommendation.riskLevel];
   const circumference = 2 * Math.PI * 20;
   const strokeDashoffset =
-    circumference - (recommendation.successProbability / 100) * circumference;
+    circumference - (activeRecommendation.successProbability / 100) * circumference;
 
   return (
     <motion.div
@@ -124,7 +164,7 @@ export function GuardianRecommendations() {
                   />
                 </svg>
                 <span className="font-mono text-xs font-semibold tabular-nums text-emerald">
-                  {recommendation.successProbability}%
+                  {activeRecommendation.successProbability}%
                 </span>
               </div>
               <div>
@@ -142,10 +182,10 @@ export function GuardianRecommendations() {
               Recommended for today
             </p>
             <p className="mt-2 text-sm font-medium leading-relaxed text-foreground/90">
-              {recommendation.task}
+              {activeRecommendation.task}
             </p>
             <p className="mt-1.5 font-mono text-[11px] text-muted">
-              {recommendation.taskMeta}
+              {activeRecommendation.taskMeta}
             </p>
           </div>
 
@@ -155,38 +195,42 @@ export function GuardianRecommendations() {
               <div className="flex items-center gap-2">
                 <span className={`h-2 w-2 rounded-full ${risk.dot}`} />
                 <span className={`text-sm font-medium ${risk.text}`}>
-                  {recommendation.riskLevel}
+                  {activeRecommendation.riskLevel}
                 </span>
                 <span
                   className={`ml-auto rounded-md px-1.5 py-0.5 font-mono text-[10px] ${risk.bg} ${risk.text}`}
                 >
-                  {recommendation.riskScore}
+                  {activeRecommendation.riskScore}
                 </span>
               </div>
             </MetricCell>
 
             <MetricCell label="Expected completion">
               <p className="font-mono text-sm font-medium tabular-nums">
-                {recommendation.expectedCompletion}
+                {activeRecommendation.expectedCompletion}
               </p>
-              <p className="mt-0.5 text-[10px] text-muted">1 day ahead of deadline</p>
+              <p className="mt-0.5 text-[10px] text-muted">
+                {plan ? "Generated from AI plan" : "1 day ahead of deadline"}
+              </p>
             </MetricCell>
 
             <MetricCell label="Buffer remaining">
               <p className="font-mono text-sm font-medium tabular-nums text-accent">
-                {recommendation.bufferRemaining}
+                {activeRecommendation.bufferRemaining}
               </p>
-              <p className="mt-0.5 text-[10px] text-muted">Contingency reserve intact</p>
+              <p className="mt-0.5 text-[10px] text-muted">
+                {plan ? "Timeline phases generated" : "Contingency reserve intact"}
+              </p>
             </MetricCell>
 
             <MetricCell label="Success probability">
               <p className="font-mono text-sm font-medium tabular-nums text-emerald">
-                {recommendation.successProbability}%
+                {activeRecommendation.successProbability}%
               </p>
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.04]">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${recommendation.successProbability}%` }}
+                  animate={{ width: `${activeRecommendation.successProbability}%` }}
                   transition={{
                     duration: 0.8,
                     delay: 0.2,

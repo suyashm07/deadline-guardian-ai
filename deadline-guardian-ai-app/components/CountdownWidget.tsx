@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import type { GeneratedPlan } from "./generated-plan";
 import { GlassPanel } from "./ui/GlassPanel";
 
 const DEADLINE = new Date("2026-06-28T23:59:59");
@@ -13,9 +14,13 @@ function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-function computeRemaining(now: Date) {
-  const diff = Math.max(0, DEADLINE.getTime() - now.getTime());
-  const total = Math.max(1, DEADLINE.getTime() - START.getTime());
+function deadlineFromInput(deadline?: string) {
+  return deadline ? new Date(`${deadline}T23:59:59`) : DEADLINE;
+}
+
+function computeRemaining(now: Date, deadline: Date, start: Date) {
+  const diff = Math.max(0, deadline.getTime() - now.getTime());
+  const total = Math.max(1, deadline.getTime() - start.getTime());
   const elapsed = total - diff;
   const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
 
@@ -57,7 +62,13 @@ function UnitBlock({ unit, index }: { unit: TimeUnit; index: number }) {
   );
 }
 
-export function CountdownWidget() {
+type CountdownWidgetProps = {
+  plan: GeneratedPlan | null;
+  deadline?: string;
+  missionName?: string;
+};
+
+export function CountdownWidget({ plan, deadline, missionName }: CountdownWidgetProps) {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -65,9 +76,11 @@ export function CountdownWidget() {
     return () => clearInterval(id);
   }, []);
 
+  const missionDeadline = useMemo(() => deadlineFromInput(deadline), [deadline]);
+  const missionStart = plan ? now : START;
   const { days, hours, minutes, seconds, pct, diff } = useMemo(
-    () => computeRemaining(now),
-    [now]
+    () => computeRemaining(now, missionDeadline, missionStart),
+    [missionDeadline, missionStart, now]
   );
 
   const urgency =
@@ -127,10 +140,12 @@ export function CountdownWidget() {
           </div>
 
           <h2 className="mt-2 text-lg font-semibold tracking-tight sm:text-xl">
-            Research paper deadline
+            {missionName ? `${missionName} deadline` : "Research paper deadline"}
           </h2>
           <p className="mt-1 text-xs text-muted">
-            {diff > 0
+            {plan
+              ? plan.summary
+              : diff > 0
               ? "AI recommends maintaining current pace with 18h buffer"
               : "Deadline reached — review contingency plan"}
           </p>
