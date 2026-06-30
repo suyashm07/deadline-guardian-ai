@@ -2,9 +2,10 @@
 
 import { motion } from "framer-motion";
 import type { GeneratedPlan } from "./generated-plan";
+import { getTaskId, useMission } from "./MissionContext";
 import { GlassPanel } from "./ui/GlassPanel";
 
-const phases = [
+const demoPhases = [
   {
     id: "research",
     label: "Research",
@@ -64,25 +65,41 @@ type AITimelineProps = {
 };
 
 export function AITimeline({ plan }: AITimelineProps) {
+  const { activeProgress, toggleTaskComplete } = useMission();
+  const completedIds = new Set(activeProgress.completedTaskIds);
+
   const totalHours =
     plan?.timeline.reduce((sum, phase) => sum + phase.hours, 0) ?? 0;
+
   const timelinePhases = plan
-    ? plan.timeline.map((phase, index) => ({
-        id: `${phase.day}-${index}`,
-        label: phase.task,
-        days: phase.day,
-        hours: phase.hours,
-        status: index === 0 ? ("active" as const) : ("upcoming" as const),
-        ai: phase.task,
-        width: Math.max(8, (phase.hours / Math.max(totalHours, 1)) * 100),
-      }))
-    : phases;
+    ? plan.timeline.map((phase, index) => {
+        const taskId = getTaskId(index);
+        const isComplete = completedIds.has(taskId);
+
+        return {
+          id: taskId,
+          label: phase.task,
+          days: phase.day,
+          hours: phase.hours,
+          status: isComplete
+            ? ("complete" as const)
+            : index === plan.timeline.findIndex((_, i) => !completedIds.has(getTaskId(i)))
+              ? ("active" as const)
+              : ("upcoming" as const),
+          ai: phase.task,
+          width: Math.max(8, (phase.hours / Math.max(totalHours, 1)) * 100),
+          isComplete,
+          taskId,
+        };
+      })
+    : demoPhases.map((phase) => ({ ...phase, isComplete: false, taskId: phase.id }));
+
   const recommendation =
     plan?.recommendations[0] ??
     "Body sections are the critical path. Start 30 min earlier tomorrow to preserve buffer. Current trajectory:";
 
   return (
-    <GlassPanel padding="lg" className="overflow-hidden">
+    <GlassPanel padding="lg" className="premium-card overflow-hidden">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -113,7 +130,6 @@ export function AITimeline({ plan }: AITimelineProps) {
         </div>
       </div>
 
-      {/* Gantt-style bar */}
       <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-white/[0.04]">
         {timelinePhases.map((phase, i) => {
           const style = statusStyles[phase.status];
@@ -134,51 +150,84 @@ export function AITimeline({ plan }: AITimelineProps) {
         })}
       </div>
 
-      {/* Phase cards */}
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {timelinePhases.map((phase, i) => {
           const style = statusStyles[phase.status];
+          const isInteractive = Boolean(plan);
+
           return (
             <motion.div
               key={phase.id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.07, duration: 0.4 }}
-              className={`relative rounded-xl border p-3.5 transition-colors ${
-                phase.status === "active"
-                  ? "border-accent/30 bg-accent-dim/30"
-                  : "border-border bg-surface"
+              className={`relative rounded-xl border p-3.5 transition-all duration-200 ${
+                phase.isComplete
+                  ? "border-emerald/20 bg-emerald-dim/10 opacity-70"
+                  : phase.status === "active"
+                    ? "border-accent/30 bg-accent-dim/30"
+                    : "border-border bg-surface"
               }`}
             >
-              {phase.status === "active" && (
+              {phase.status === "active" && !phase.isComplete && (
                 <motion.div
                   className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent"
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
               )}
-              <div className="flex items-center gap-2">
-                <span
-                  className={`h-2 w-2 rounded-full ${style.dot}`}
-                  style={
-                    phase.status === "active"
-                      ? { boxShadow: `0 0 8px ${style.glow}` }
-                      : undefined
-                  }
-                />
-                <span className="text-xs font-medium">{phase.label}</span>
+              <div className="flex items-start gap-2">
+                {isInteractive ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleTaskComplete(phase.taskId)}
+                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 ${
+                      phase.isComplete
+                        ? "border-emerald bg-emerald text-background"
+                        : "border-border bg-surface hover:border-accent/40"
+                    }`}
+                    aria-label={phase.isComplete ? "Mark task incomplete" : "Mark task complete"}
+                  >
+                    {phase.isComplete ? (
+                      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      </svg>
+                    ) : null}
+                  </button>
+                ) : (
+                  <span
+                    className={`mt-1 h-2 w-2 rounded-full ${style.dot}`}
+                    style={
+                      phase.status === "active"
+                        ? { boxShadow: `0 0 8px ${style.glow}` }
+                        : undefined
+                    }
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <span
+                    className={`block text-xs font-medium ${
+                      phase.isComplete ? "line-through text-muted" : ""
+                    }`}
+                  >
+                    {phase.label}
+                  </span>
+                  <p className="mt-1 font-mono text-[10px] text-muted">{phase.days}</p>
+                  <p className="mt-2 font-mono text-sm tabular-nums">{phase.hours}h</p>
+                  <p
+                    className={`mt-1.5 text-[10px] leading-relaxed ${
+                      phase.isComplete ? "line-through text-muted/70" : "text-muted"
+                    }`}
+                  >
+                    {phase.ai}
+                  </p>
+                </div>
               </div>
-              <p className="mt-1 font-mono text-[10px] text-muted">{phase.days}</p>
-              <p className="mt-2 font-mono text-sm tabular-nums">{phase.hours}h</p>
-              <p className="mt-1.5 text-[10px] leading-relaxed text-muted">
-                {phase.ai}
-              </p>
             </motion.div>
           );
         })}
       </div>
 
-      {/* AI insight strip */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

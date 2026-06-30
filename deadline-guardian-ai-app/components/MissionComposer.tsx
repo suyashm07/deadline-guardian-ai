@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { GeneratedPlan, MissionInput } from "./generated-plan";
+import { Spinner } from "./ui/Toast";
+import { useToast } from "./ui/Toast";
 import { GlassPanel } from "./ui/GlassPanel";
 
 type GeneratePlanResponse =
@@ -19,19 +21,49 @@ type MissionComposerProps = {
   onPlanGenerated: (plan: GeneratedPlan, mission: MissionInput) => void;
 };
 
-export function MissionComposer({ onPlanGenerated }: MissionComposerProps) {
-  const [expanded, setExpanded] = useState(false);
+const GENERATION_MESSAGES = [
+  "🧠 Understanding mission...",
+  "📅 Building timeline...",
+  "⚠ Calculating risks...",
+  "📈 Optimizing workload...",
+  "✨ Finalizing strategy...",
+];
 
-const [missionName, setMissionName] = useState("");
-const [deadline, setDeadline] = useState("");
-const [description, setDescription] = useState("");
-const [priority, setPriority] = useState("Medium");
-const [hoursPerDay, setHoursPerDay] = useState(4);
-const [isGenerating, setIsGenerating] = useState(false);
-const [error, setError] = useState("");
+export function MissionComposer({ onPlanGenerated }: MissionComposerProps) {
+  const { showToast } = useToast();
+  const [expanded, setExpanded] = useState(false);
+  const [missionName, setMissionName] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Medium");
+  const [hoursPerDay, setHoursPerDay] = useState(4);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isGenerating) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setMessageIndex((index) => (index + 1) % GENERATION_MESSAGES.length);
+    }, 2200);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [isGenerating]);
+
+  const handleError = useCallback(() => {
+    showToast({
+      title: "Generation Failed",
+      message: "Unable to generate your mission plan. Please try again.",
+      variant: "error",
+    });
+  }, [showToast]);
 
   return (
-    <GlassPanel padding="lg" className="relative overflow-hidden">
+    <GlassPanel padding="lg" className="premium-card relative overflow-hidden">
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
@@ -59,17 +91,21 @@ const [error, setError] = useState("");
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="rounded-lg border border-border px-3 py-1.5 text-[11px] text-muted transition-colors hover:border-border-strong hover:text-foreground"
+            disabled={isGenerating}
+            className="btn-ghost rounded-lg px-3 py-1.5 text-[11px] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {expanded ? "Collapse" : "Expand"}
           </button>
         </div>
 
         <form
-          className="mt-5 space-y-4"
+          className={`mt-5 space-y-4 ${isGenerating ? "cursor-wait" : ""}`}
           onSubmit={async (e) => {
             e.preventDefault();
-            setError("");
+
+            if (isGenerating) {
+              return;
+            }
 
             const mission: MissionInput = {
               missionName,
@@ -99,30 +135,29 @@ const [error, setError] = useState("");
               }
 
               onPlanGenerated(data.plan, mission);
-            } catch (err) {
-              setError(
-                err instanceof Error
-                  ? err.message
-                  : "Failed to generate mission plan."
-              );
+            } catch {
+              handleError();
             } finally {
               setIsGenerating(false);
+              setMessageIndex(0);
             }
           }}
         >
           <div className="flex flex-col gap-3 sm:flex-row">
-          <input
+            <input
               type="text"
               value={missionName}
               onChange={(e) => setMissionName(e.target.value)}
               placeholder="Mission name — e.g. Climate policy research paper"
-              className="input-os flex-1 rounded-xl px-4 py-3 text-sm placeholder:text-muted"
+              disabled={isGenerating}
+              className="input-os flex-1 rounded-xl px-4 py-3 text-sm placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-60"
             />
             <input
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="input-os rounded-xl px-4 py-3 text-sm [color-scheme:dark] sm:w-44"
+              disabled={isGenerating}
+              className="input-os rounded-xl px-4 py-3 text-sm [color-scheme:dark] disabled:cursor-not-allowed disabled:opacity-60 sm:w-44"
             />
           </div>
 
@@ -138,54 +173,56 @@ const [error, setError] = useState("");
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Scope, constraints, available hours per day..."
-                className="input-os w-full resize-none rounded-xl px-4 py-3 text-sm placeholder:text-muted"
+                disabled={isGenerating}
+                className="input-os w-full resize-none rounded-xl px-4 py-3 text-sm placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-60"
               />
               <div>
                 <label className="mb-2 block text-sm text-muted">
                   Hours Available Per Day
                 </label>
-
                 <input
                   type="number"
                   min={1}
                   max={24}
                   value={hoursPerDay}
                   onChange={(e) => setHoursPerDay(Number(e.target.value))}
-                  className="input-os w-full rounded-xl px-4 py-3 text-sm"
+                  disabled={isGenerating}
+                  className="input-os w-full rounded-xl px-4 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
               <div>
-              <label className="mb-2 block text-sm text-muted">
-                Priority
-              </label>
-
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="input-os w-full rounded-xl px-4 py-3 text-sm"
-              >
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
+                <label className="mb-2 block text-sm text-muted">Priority</label>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  disabled={isGenerating}
+                  className="input-os w-full rounded-xl px-4 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
             </motion.div>
           )}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[11px] text-muted">
-              {error || "AI will generate timeline, risk analysis, and hour allocation"}
+              {isGenerating
+                ? GENERATION_MESSAGES[messageIndex]
+                : "AI will generate timeline, risk analysis, and hour allocation"}
             </p>
             <motion.button
               type="submit"
               disabled={isGenerating}
-              whileTap={{ scale: 0.98 }}
-              className="btn-primary flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm"
+              whileTap={isGenerating ? undefined : { scale: 0.98 }}
+              whileHover={isGenerating ? undefined : { scale: 1.02 }}
+              className="btn-primary flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm disabled:cursor-wait disabled:opacity-70"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-              </svg>
-              {isGenerating ? "Generating..." : "Generate mission plan"}
+              {isGenerating ? <Spinner /> : null}
+              {isGenerating
+                ? GENERATION_MESSAGES[messageIndex]
+                : "Generate mission plan"}
             </motion.button>
           </div>
         </form>

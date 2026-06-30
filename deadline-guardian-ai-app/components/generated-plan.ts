@@ -18,3 +18,15 @@ export interface MissionInput {
   priority: string;
   hoursPerDay: number;
 }
+
+export interface MissionProgress {
+  completedTaskIds: string[];
+}
+
+export interface MissionHistoryEntry {
+  id: string;
+  mission: MissionInput;
+  plan: GeneratedPlan;
+  progress: MissionProgress;
+  createdAt: string;
+}
